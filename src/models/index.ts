@@ -192,6 +192,8 @@ const replySchema = new Schema(
     draftId: { type: ObjectId, ref: 'OutreachMessage' },
     handled: { type: Boolean, default: false },
     autoSent: { type: Boolean, default: false },
+    // why auto-reply did not send this one (shown to the recruiter)
+    autoNote: String,
     error: String,
   },
   { timestamps: true },

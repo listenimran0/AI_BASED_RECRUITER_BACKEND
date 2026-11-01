@@ -11,7 +11,8 @@
     "start": "node dist/server.js",
     "start:worker": "node dist/worker.js",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test test/*.test.ts"
+    "test": "tsx --test test/*.test.ts",
+    "reset:db": "tsx scripts/reset-db.ts"
   },
   "engines": {
     "node": ">=20"

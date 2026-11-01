@@ -54,6 +54,15 @@ type JsonCall<T> = {
   fallback: () => T;
 };
 
+export function stripFences(text: string) {
+  const t = text.trim();
+  const m = t.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  if (m) return m[1];
+  const start = t.indexOf('{');
+  const end = t.lastIndexOf('}');
+  return start > 0 || (end !== -1 && end < t.length - 1) ? t.slice(start, end + 1) : t;
+}
+
 export async function completeJson<T>(schema: ZodType<T>, call: JsonCall<T>): Promise<T> {
   if (!llmEnabled) return call.fallback();
 
@@ -73,7 +82,7 @@ export async function completeJson<T>(schema: ZodType<T>, call: JsonCall<T>): Pr
     await recordUsage(call.ctx, res.usage);
     const text = res.choices[0].message.content || '';
     try {
-      return schema.parse(JSON.parse(text));
+      return schema.parse(JSON.parse(stripFences(text)));
     } catch (err) {
       lastError = err instanceof Error ? err.message : String(err);
       messages.push({ role: 'assistant', content: text });

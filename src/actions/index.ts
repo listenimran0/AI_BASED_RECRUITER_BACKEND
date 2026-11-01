@@ -113,7 +113,6 @@ const executors: Record<string, Executor<any>> = {
       await postAssistant(
         conversationId,
         `Writing personalised emails for ${campaign.candidateIds.length} candidate${campaign.candidateIds.length > 1 ? 's' : ''}. I will let you know when the drafts are ready.`,
-        [{ type: 'campaign', ref: { campaignId: String(campaign._id) } }],
       );
       return { campaignId: String(campaign._id) };
     },

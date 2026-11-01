@@ -52,7 +52,9 @@ export async function approveReplyDraft(draftId: string, edits: { subject?: stri
   const candidate = await Candidate.findById(draft.candidateId);
   if (!candidate || candidate.status === 'unsubscribed') throw new HttpError(409, 'This candidate has unsubscribed, nothing was sent');
 
-  await OutreachMessage.updateOne({ _id: draft._id, status: 'draft' }, { subject, body, status: 'scheduled', scheduledFor: new Date() });
+  // claim the draft atomically: a double click must not approve (or log) it twice
+  const claimed = await OutreachMessage.findOneAndUpdate({ _id: draft._id, status: 'draft' }, { subject, body, status: 'scheduled', scheduledFor: new Date() });
+  if (!claimed) throw new HttpError(409, 'This draft was already handled');
   await logActivity({
     jobId: draft.jobId,
     candidateId: draft.candidateId,

@@ -15,10 +15,11 @@ const startOfToday = () => {
 
 const startOfTomorrow = () => new Date(startOfToday().getTime() + 24 * 60 * 60 * 1000);
 
-async function isUnsubscribed(candidate: any) {
-  if (candidate.status === 'unsubscribed') return true;
+async function unsubscribeReason(candidate: any) {
+  if (candidate.status === 'unsubscribed') return 'candidate unsubscribed';
   // an unsubscribe applies to the address, whichever job it came from
-  return Boolean(await Candidate.exists({ email: candidate.email, status: 'unsubscribed' }));
+  const other = await Candidate.exists({ email: candidate.email, status: 'unsubscribed' });
+  return other ? 'this email address unsubscribed from another job' : null;
 }
 
 export async function processSend(queueJob: QueueJob<{ messageId: string }>) {
@@ -31,14 +32,25 @@ export async function processSend(queueJob: QueueJob<{ messageId: string }>) {
   if (!msg) return;
 
   const update = (patch: Record<string, unknown>) => OutreachMessage.updateOne({ _id: msg._id }, patch);
-  const skip = (note: string) => update({ status: 'skipped', note });
+  const skip = async (note: string) => {
+    await update({ status: 'skipped', note });
+    // make the reason visible in the activity feed instead of a silent "stopped"
+    await logActivity({
+      jobId: msg.jobId,
+      candidateId: msg.candidateId,
+      actor: 'system',
+      type: 'email_skipped',
+      message: `${msg.kind === 'reply' ? 'Reply' : `Email step ${msg.stepIndex + 1}`} not sent: ${note}`,
+    });
+  };
 
   try {
     const candidate = await Candidate.findById(msg.candidateId);
+    const blocked = candidate?.email ? await unsubscribeReason(candidate) : null;
     if (!candidate || !candidate.email) {
       await skip('candidate has no email');
-    } else if (await isUnsubscribed(candidate)) {
-      await skip('candidate unsubscribed');
+    } else if (blocked) {
+      await skip(blocked);
     } else {
       const proceed = await passesOutreachRules(msg, candidate, update, skip);
       if (proceed) {
@@ -66,7 +78,8 @@ export async function processSend(queueJob: QueueJob<{ messageId: string }>) {
     }
   }
 
-  refresh('campaign', { jobId: msg.jobId, id: msg.campaignId });
+  // a reply draft is shown in the replies panel, an outreach email in the campaign panel
+  refresh(msg.kind === 'reply' ? 'reply' : 'campaign', { jobId: msg.jobId, id: msg.kind === 'reply' ? undefined : msg.campaignId });
   await completeCampaignIfFinished(msg.campaignId);
 }
 
@@ -82,6 +95,22 @@ async function passesOutreachRules(
   if (!campaign || campaign.status !== 'active') {
     await update({ status: 'scheduled' });
     return false;
+  }
+
+  // a follow-up can come due before step 1 has gone out (slow queue, retry, restart).
+  // Wait for step 1 instead of throwing the follow-up away.
+  if (msg.stepIndex > 0 && candidate.status === 'accepted') {
+    const firstPending = await OutreachMessage.exists({
+      candidateId: candidate._id,
+      campaignId: msg.campaignId,
+      kind: 'outreach',
+      stepIndex: 0,
+      status: { $in: ['draft', 'scheduled', 'sending'] },
+    });
+    if (firstPending) {
+      await update({ status: 'scheduled', scheduledFor: new Date(Date.now() + 30_000), note: 'waiting for the first email to go out' });
+      return false;
+    }
   }
 
   const expected = msg.stepIndex === 0 ? 'accepted' : 'contacted';

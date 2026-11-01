@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { checkAutoReply } from '../src/lib/autoReply';
+import { classifySchema, heuristicLabel } from '../src/lib/classify';
+import { stripFences } from '../src/lib/llm';
 import { parseCandidateCsv } from '../src/lib/csv';
 import { cleanUntrusted } from '../src/lib/sanitize';
 import { isPrivateAddress } from '../src/lib/url';
@@ -122,5 +124,29 @@ describe('fetch_url address guard', () => {
     for (const ip of ['8.8.8.8', '1.1.1.1', '172.32.0.1', '2606:4700:4700::1111']) {
       assert.ok(!isPrivateAddress(ip), ip);
     }
+  });
+});
+
+describe('reply classification', () => {
+  it('accepts the sloppy label and confidence shapes small models return', () => {
+    assert.equal(classifySchema.parse({ label: 'Wants Meeting', confidence: 90 }).label, 'wants_meeting');
+    assert.equal(classifySchema.parse({ label: 'wants_meeting', confidence: 90 }).confidence, 0.9);
+    assert.equal(classifySchema.parse({ label: 'question', confidence: '0.7' }).confidence, 0.7);
+    assert.equal(classifySchema.parse({ label: 'interested', confidence: 1 }).confidence, 1);
+    assert.throws(() => classifySchema.parse({ label: 'maybe', confidence: 0.5 }));
+  });
+
+  it('strips code fences and chatter around json', () => {
+    assert.equal(stripFences('```json\n{"a":1}\n```'), '{"a":1}');
+    assert.equal(stripFences('Sure! {"a":1} Hope it helps'), '{"a":1}');
+    assert.equal(stripFences('{"a":1}'), '{"a":1}');
+  });
+
+  it('keyword fallback: stop requests win and a plain question is not a meeting', () => {
+    assert.equal(heuristicLabel('Please stop emailing me, I would rather not chat').label, 'unsubscribe');
+    assert.equal(heuristicLabel('Not interested, thanks').label, 'not_interested');
+    assert.equal(heuristicLabel('Is the position still available? What is the notice period?').label, 'question');
+    assert.equal(heuristicLabel('Can we schedule a call on Thursday?').label, 'wants_meeting');
+    assert.equal(heuristicLabel('Sounds good, tell me more').label, 'interested');
   });
 });

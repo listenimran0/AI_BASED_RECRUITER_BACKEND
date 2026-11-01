@@ -123,7 +123,26 @@ export async function processDrafting(queueJob: QueueJob<{ campaignId: string; c
     } catch (err) {
       log.warn({ err, candidateId }, 'draft attempt failed');
       if (!isLastAttempt(queueJob)) throw err;
-      await Campaign.updateOne({ _id: campaignId }, { $inc: { draftsFailed: 1 } });
+      try {
+        // model kept failing: save the plain template so the candidate is not dropped
+        const emails = fallbackEmails(job, candidate, campaign.steps, config.recruiter.name);
+        for (let i = 0; i < emails.length; i++) {
+          await OutreachMessage.updateOne(
+            { uniqueKey: `${campaignId}:${candidateId}:${i}` },
+            {
+              $setOnInsert: {
+                campaignId, jobId: job._id, candidateId, kind: 'outreach', stepIndex: i,
+                uniqueKey: `${campaignId}:${candidateId}:${i}`,
+                subject: emails[i].subject, body: emails[i].body + UNSUBSCRIBE_FOOTER, status: 'draft',
+              },
+            },
+            { upsert: true },
+          );
+        }
+      } catch (fallbackErr) {
+        log.warn({ err: fallbackErr, candidateId }, 'template draft failed too');
+        await Campaign.updateOne({ _id: campaignId }, { $inc: { draftsFailed: 1 } });
+      }
     }
   }
 

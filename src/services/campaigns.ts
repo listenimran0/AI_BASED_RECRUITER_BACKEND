@@ -131,7 +131,19 @@ export async function setCampaignPaused(campaignId: string, paused: boolean, act
 }
 
 // the database is the source of truth; this just hands due messages to the queue
+const STUCK_SENDING_MS = 2 * 60 * 1000;
+
+// a worker that dies mid-send leaves the message in "sending" forever; put it back in line
+async function recoverStuckSending() {
+  const recovered = await OutreachMessage.updateMany(
+    { status: 'sending', updatedAt: { $lt: new Date(Date.now() - STUCK_SENDING_MS) } },
+    { status: 'scheduled', scheduledFor: new Date(), note: 'send was interrupted, retrying' },
+  );
+  return recovered.modifiedCount;
+}
+
 export async function enqueueDueMessages() {
+  await recoverStuckSending();
   const activeCampaigns = await Campaign.distinct('_id', { status: 'active' });
   const due = await OutreachMessage.find({
     status: 'scheduled',

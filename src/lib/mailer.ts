@@ -1,7 +1,10 @@
 import nodemailer from 'nodemailer';
 import { config } from '../config';
+import { log } from '../logger';
 
 const live = Boolean(config.smtp.host);
+
+if (!live) log.warn('SMTP_HOST is not set: emails are only simulated (transport "mock") and will NOT reach anyone');
 
 const transport = live
   ? nodemailer.createTransport({
