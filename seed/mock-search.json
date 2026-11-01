@@ -1,0 +1,27 @@
+[
+  {
+    "title": "Sample Candidate One - Senior React Engineer - Example Corp | LinkedIn",
+    "link": "https://www.linkedin.com/in/sample-search-one",
+    "snippet": "Dhaka, Bangladesh. Senior React Engineer. React, TypeScript, Redux Toolkit, Jest. Sample result used when SERPER_API_KEY is not set."
+  },
+  {
+    "title": "Sample Candidate Two - Frontend Engineer - Example Labs | LinkedIn",
+    "link": "https://www.linkedin.com/in/sample-search-two",
+    "snippet": "Remote. Frontend Engineer. React, JavaScript, CSS. Sample result used when SERPER_API_KEY is not set."
+  },
+  {
+    "title": "Sample Candidate Three - Software Engineer - Example Systems | LinkedIn",
+    "link": "https://www.linkedin.com/in/sample-search-three",
+    "snippet": "Bengaluru, India. Software Engineer. Java, Spring Boot. Sample result used when SERPER_API_KEY is not set."
+  },
+  {
+    "title": "Sample Candidate Four - Lead UI Engineer - Example Digital | LinkedIn",
+    "link": "https://www.linkedin.com/in/sample-search-four",
+    "snippet": "Chattogram, Bangladesh. Lead UI Engineer. React, TypeScript, Next.js, GraphQL, D3. Sample result used when SERPER_API_KEY is not set."
+  },
+  {
+    "title": "Sample Candidate Five - Web Developer - Example Works | LinkedIn",
+    "link": "https://www.linkedin.com/in/sample-search-five",
+    "snippet": "Sylhet, Bangladesh. Web Developer. HTML, CSS, jQuery. Sample result used when SERPER_API_KEY is not set."
+  }
+]

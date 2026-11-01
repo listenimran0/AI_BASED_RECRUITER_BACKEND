@@ -1,0 +1,28 @@
+Senior React Engineer (Remote, Bangladesh or India)
+
+About the role
+We are building a hiring analytics product used by recruiting teams. You will own the web application end to end: design the component architecture, ship new features every sprint and keep the interface fast as the data grows. You will work closely with two backend engineers and a product designer.
+
+What you will do
+- Build and maintain the React and TypeScript front end of our main product
+- Turn rough designs into polished, accessible interfaces
+- Improve performance of data-heavy tables and charts
+- Review code, mentor mid-level engineers and help us raise the quality bar
+- Work with the backend team on API design
+
+Requirements
+- 5+ years of professional front-end experience, at least 3 with React
+- Strong TypeScript
+- Experience with state management (Redux Toolkit, Zustand or similar) and data fetching (React Query or similar)
+- Solid HTML, CSS and accessibility fundamentals
+- Experience writing tests (Jest, Testing Library or Playwright)
+
+Nice to have
+- Next.js
+- GraphQL
+- Experience with charting libraries such as D3 or Recharts
+- Node.js for small backend tasks
+
+Location and compensation
+Fully remote for candidates based in Bangladesh or India, with a 4 hour overlap with UTC+6 working hours.
+Salary: BDT 250,000 to 400,000 per month depending on experience.
