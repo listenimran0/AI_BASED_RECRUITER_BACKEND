@@ -8,6 +8,12 @@ export class HttpError extends Error {
   }
 }
 
+export async function must(query: PromiseLike<any>, what: string): Promise<any> {
+  const doc = await Promise.resolve(query).catch(() => null);
+  if (!doc) throw new HttpError(404, `${what} not found`);
+  return doc;
+}
+
 export function parse<T>(schema: ZodType<T>, data: unknown): T {
   const result = schema.safeParse(data);
   if (!result.success) {
